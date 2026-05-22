@@ -1,33 +1,44 @@
 
 library(targets)
 library(tarchetypes)
+library(tidyverse)
+library(janitor)
+library(pointblank)
 
-# Declare packages used in the pipeline
-tar_option_set(packages = c("tidyverse", "janitor", "pointblank"), format = "qs")  # Default storage format. qs (which is actually qs2) is fast.
 
-
-# Check if file exists, if not, it will download
-if (!fs::file_exists("data.zip")) {
-  message("Downloading data.zip from GitHub")
-  curl::curl_download(
-    "https://github.com/STA220/cs/raw/refs/heads/main/data.zip",
-    "data.zip",
-    quiet = FALSE
-  )
+load_data <- function(file) {
+  readr::read_csv(file) |>
+    janitor::remove_empty() |>
+    janitor::remove_empty()
 }
 
-# List steps of your pipeline
-list(
-  # Step 1: Register the data
-  tar_target(zipdata, "data.zip", format = "file"),
+##Expectation/Validation
 
-  # Step 2: unzip the data
-  tar_target(csv_files, zip::unzip(zipdata)),
+validate_patients <- function(patients) {
+  patients |> 
+    col_vals_between(
+      birthdate,
+      as.Date("1900-01-01"),
+      Sys.Date(),
+      label = "Birthdate",
+      na_pass = TRUE
+    ) |>
+    #Birth before death
+    col_vars_gte(
+      deathdate,
+      vars(birthdate),
+      label = "Death data after birth date",
+      na_pass = TRUE
+    ) |>
+    #SSN check
+    col_vals_regenx(
+      ssn, 
+    "[0-9]{3}-[0-9]{2}-[0-9]{4}$",
+      label = "SSN must follow XXX-XX-XXXX format"
+    ) |>
+  }
+  
+    
 
-  # Step 3: Load patients file raw data
-  tar_target(patients, data.table::fread("data-fixed/patients.csv")) |>
-    janitor::remove_empty(patients, quiet = FALSE) |>
-    janitor::remove_constant(patients, quiet = FALSE)
-
-
-)
+    
+  
