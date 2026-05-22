@@ -27,8 +27,8 @@ list(
   # Step 3: Load patients file raw data
   tar_target(patients, {
     read_csv(unz(zipdata, "data-fixed/patients.csv")) |>
-    janitor::remove_empty(patients, quiet = FALSE) |>
-    janitor::remove_constant(patients, quiet = FALSE)}
+    janitor::remove_empty(quiet = FALSE) |>
+    janitor::remove_constant(quiet = FALSE)}
   ),
 
   #Step 4: validate 
@@ -66,6 +66,7 @@ tar_target(report, export_report(checks, "patient_validation.html")
 #step 5; unzip payer file
 tar_target(payer_file, unzip("data.zip", files = "data-fixed/payer_transitions.csv")
   ), 
+
 #step 6 use duckdb to perform calculations on disk 
 tar_target(lastdata, duckplyr::read_csv_duckdb("data-fixed/payer_transitions.csv") |>
  summarise(lastdate = max(start_date)) |>
